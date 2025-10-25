@@ -64,8 +64,6 @@ resource "aws_iam_policy" "glue_crawler_s3_policy" {
   })
 }
 
-# Import the existing IAM role into Terraform
-# Run: terraform import aws_iam_role.glue_crawler_role AWSGlueServiceRole-crawl
 resource "aws_iam_role" "glue_crawler_role" {
   name               = "AWSGlueServiceRole-crawl"
   path               = "/service-role/"  # Match the existing path
