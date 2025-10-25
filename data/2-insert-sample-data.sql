@@ -1,0 +1,14 @@
+-- Insert sample data into the lets_try_iceberg Iceberg table
+
+INSERT INTO lets_try_iceberg VALUES
+    ('vehicle-001', CAST('2024-01-15 08:30:00' AS TIMESTAMP), 65, 22.5, ROW(40.7128, -74.0060)),
+    ('vehicle-002', CAST('2024-01-15 08:45:00' AS TIMESTAMP), 55, 21.3, ROW(34.0522, -118.2437)),
+    ('vehicle-001', CAST('2024-01-15 09:00:00' AS TIMESTAMP), 72, 23.1, ROW(40.7580, -74.0390)),
+    ('vehicle-003', CAST('2024-01-15 09:15:00' AS TIMESTAMP), 48, 19.8, ROW(41.8781, -87.6298)),
+    ('vehicle-002', CAST('2024-01-15 09:30:00' AS TIMESTAMP), 60, 20.5, ROW(34.0689, -118.4452)),
+    ('vehicle-001', CAST('2024-01-15 10:00:00' AS TIMESTAMP), 58, 24.2, ROW(40.7800, -74.0100)),
+    ('vehicle-004', CAST('2024-01-15 10:15:00' AS TIMESTAMP), 75, 18.2, ROW(29.7604, -95.3698)),
+    ('vehicle-003', CAST('2024-01-15 10:30:00' AS TIMESTAMP), 52, 20.1, ROW(41.9000, -87.6298)),
+    ('vehicle-002', CAST('2024-01-15 11:00:00' AS TIMESTAMP), 68, 22.8, ROW(34.0825, -118.3733)),
+    ('vehicle-001', CAST('2024-01-15 11:30:00' AS TIMESTAMP), 63, 25.5, ROW(40.7500, -74.0200));
+
