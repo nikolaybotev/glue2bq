@@ -1,0 +1,14 @@
+# Example terraform.tfvars file
+# Copy this file to terraform.tfvars and fill in your values
+
+# GCP Configuration
+gcp_project_id      = "your-gcp-project-id"
+gcp_region          = "us-central1"
+gcp_organization_id = "123456789012"
+
+# AWS Configuration
+aws_region = "us-east-1"
+
+# Project Configuration
+environment  = "dev"
+project_name = "glue2bq"
