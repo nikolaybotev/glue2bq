@@ -3,7 +3,7 @@ resource "aws_iam_role" "bigquery_omni_role" {
   name = local.bigquery_omni_role_name
 
   # Set maximum session duration to 12 hours for BigQuery Omni
-  max_session_duration = 43200  # 12 hours in seconds
+  max_session_duration = 43200 # 12 hours in seconds
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -39,14 +39,12 @@ resource "aws_iam_policy" "bigquery_omni_policy" {
         Effect = "Allow"
         Action = [
           "glue:GetDatabase",
-          "glue:GetDatabases",
           "glue:GetTable",
           "glue:GetTables",
           "glue:GetPartitions",
-          "glue:GetPartition",
-          "glue:BatchGetPartition"
         ]
         Resource = [
+          "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:catalog",
           aws_glue_catalog_database.main.arn,
           "${aws_glue_catalog_database.main.arn}/*"
         ]
@@ -54,10 +52,16 @@ resource "aws_iam_policy" "bigquery_omni_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.data_bucket.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
         ]
         Resource = [
           aws_s3_bucket.data_bucket.arn,
@@ -87,7 +91,7 @@ resource "aws_iam_role_policy_attachment" "bigquery_omni_policy_attachment" {
 # BigQuery Omni Connection
 resource "google_bigquery_connection" "aws_omni" {
   connection_id = "${local.resource_prefix}-aws-omni"
-  location      = "aws-${var.aws_region}"  # AWS region with aws- prefix
+  location      = "aws-${var.aws_region}" # AWS region with aws- prefix
   friendly_name = "AWS Omni Connection"
   description   = "BigQuery Omni connection to AWS"
 
@@ -103,7 +107,7 @@ resource "google_bigquery_dataset" "external_dataset" {
   dataset_id    = "${replace(local.resource_prefix, "-", "_")}_external_dataset"
   friendly_name = "External Dataset from AWS Glue"
   description   = "External dataset using BigQuery Omni connection to AWS Glue"
-  location      = "aws-${var.aws_region}"  # Must match the BigQuery Omni connection region
+  location      = "aws-${var.aws_region}" # Must match the BigQuery Omni connection region
 
   external_dataset_reference {
     external_source = "aws-glue://${aws_glue_catalog_database.main.arn}"
