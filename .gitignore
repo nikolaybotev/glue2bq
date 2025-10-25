@@ -6,6 +6,7 @@
 .terraform/
 crash.log
 crash.*.log
+*.tfplan
 
 # AWS credentials
 .aws/
