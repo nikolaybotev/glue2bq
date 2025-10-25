@@ -100,7 +100,7 @@ resource "google_bigquery_connection" "aws_omni" {
 
 # BigQuery External Dataset
 resource "google_bigquery_dataset" "external_dataset" {
-  dataset_id    = "${local.resource_prefix}_external_dataset"
+  dataset_id    = "${replace(local.resource_prefix, "-", "_")}_external_dataset"
   friendly_name = "External Dataset from AWS Glue"
   description   = "External dataset using BigQuery Omni connection to AWS Glue"
   location      = var.gcp_region
