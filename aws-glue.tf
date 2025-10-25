@@ -16,9 +16,9 @@ resource "aws_glue_catalog_table" "iceberg_table" {
 
   parameters = {
     "table_type"                = "ICEBERG"
-    "metadata_location"         = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_table/metadata/"
-    "write_data_location"       = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_table/data/"
-    "write_metadata_location"   = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_table/metadata/"
+    "metadata_location"         = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_iceberg_table/metadata/v1.metadata.json"
+    "write_data_location"       = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_iceberg_table/data/"
+    "write_metadata_location"   = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_iceberg_table/metadata/v1.metadata.json"
     "format"                    = "iceberg"
     "iceberg.catalog"           = "glue_catalog"
     "iceberg.catalog.glue.id"   = data.aws_caller_identity.current.account_id
@@ -26,7 +26,7 @@ resource "aws_glue_catalog_table" "iceberg_table" {
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_table/"
+    location      = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_iceberg_table/"
     input_format  = "org.apache.hadoop.mapred.FileInputFormat"
     output_format = "org.apache.hadoop.mapred.FileOutputFormat"
 
