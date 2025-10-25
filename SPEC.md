@@ -7,7 +7,7 @@ Create a terraform project with AWS and GCP providers with the following resourc
 * If necessary for the glue database configuration, create a script that creates the Iceberg table and populates it with a few records with sample dummy data and uploads it to the S3 bucket
 * A GCS bucket with CMEK
 * A Storage Transfer Job on GCP that reads from the S3 bucket and writes to the GCS bucket.
-* An AWS role for the Storage Transfer job above with access to the S3 bucket in the policy
+* An AWS role for the Storage Transfer job above with access to the S3 bucket and the S3 bucket KMS key
 * Configure the Storage Transfer job AWS role with the correct AssumeRoleWithWebIdentity trust policy, using terraform and leveraging the Storage Transfer serviceAccounts.get API if that is possible
 * A BigQuery Omni Connection to AWS using a dedicated AWS role
 * An AWS role for the above BigQuery Omni Connection 
