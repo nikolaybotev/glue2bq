@@ -33,6 +33,11 @@ variable "project_name" {
   default     = "glue2bq"
 }
 
+variable "vpn_ip_subnetworks" {
+  description = "List of IP subnetwork ranges for VPN access (CIDR notation)"
+  type        = list(string)
+}
+
 # Local values
 locals {
   common_tags = {

@@ -12,3 +12,4 @@ aws_region = "us-east-1"
 # Project Configuration
 environment  = "dev"
 project_name = "glue2bq"
+vpn_ip_subnetworks = []

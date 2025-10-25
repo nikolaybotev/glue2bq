@@ -32,7 +32,7 @@ resource "google_access_context_manager_service_perimeter" "main" {
         identity_type = "ANY_IDENTITY"
         
         sources {
-          access_level = "accessPolicies/${google_access_context_manager_access_policy.main.name}/accessLevels/Mary_VPN"
+          access_level = google_access_context_manager_access_level.mary_vpn.name
         }
       }
 
@@ -54,4 +54,17 @@ resource "google_access_context_manager_access_policy" "main" {
   title  = "${local.resource_prefix} Access Policy"
   
   depends_on = [google_project_service.accesscontextmanager]
+}
+
+# Access Level for Mary VPN
+resource "google_access_context_manager_access_level" "mary_vpn" {
+  parent = "accessPolicies/${google_access_context_manager_access_policy.main.name}"
+  name   = "accessPolicies/${google_access_context_manager_access_policy.main.name}/accessLevels/Mary_VPN"
+  title  = "Mary VPN"
+
+  basic {
+    conditions {
+      ip_subnetworks = var.vpn_ip_subnetworks
+    }
+  }
 }
