@@ -50,6 +50,17 @@ resource "aws_iam_policy" "glue_crawler_s3_policy" {
       {
         Effect = "Allow"
         Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = aws_kms_key.glue_catalog_cmek.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "glue:GetDatabase",
           "glue:GetDatabases",
           "glue:GetTable",

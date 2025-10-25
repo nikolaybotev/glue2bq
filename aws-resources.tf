@@ -112,21 +112,6 @@ resource "aws_kms_key" "glue_catalog_cmek" {
         }
         Action   = "kms:*"
         Resource = "*"
-      },
-      {
-        Sid    = "Allow Glue Service"
-        Effect = "Allow"
-        Principal = {
-          Service = "glue.amazonaws.com"
-        }
-        Action = [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:DescribeKey"
-        ]
-        Resource = "*"
       }
     ]
   })
