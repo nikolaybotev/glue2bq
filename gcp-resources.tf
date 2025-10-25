@@ -14,10 +14,23 @@ resource "google_kms_crypto_key" "gcs_cmek" {
   }
 }
 
+# Grant Cloud Storage service account access to KMS key
+resource "google_kms_crypto_key_iam_binding" "gcs_cmek_binding" {
+  crypto_key_id = google_kms_crypto_key.gcs_cmek.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+  members = [
+    "serviceAccount:service-${data.google_project.current.number}@gs-project-accounts.iam.gserviceaccount.com"
+  ]
+}
+
 resource "google_storage_bucket" "data_bucket" {
   name          = "${local.resource_prefix}-data-bucket"
   location      = var.gcp_region
   force_destroy = false
+
+  # Enable uniform bucket-level access as required by organization policy
+  uniform_bucket_level_access = true
 
   encryption {
     default_kms_key_name = google_kms_crypto_key.gcs_cmek.id
@@ -45,4 +58,6 @@ resource "google_storage_bucket" "data_bucket" {
       storage_class = "NEARLINE"
     }
   }
+
+  depends_on = [google_kms_crypto_key_iam_binding.gcs_cmek_binding]
 }

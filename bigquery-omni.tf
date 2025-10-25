@@ -1,6 +1,9 @@
 # AWS Role for BigQuery Omni Connection
 resource "aws_iam_role" "bigquery_omni_role" {
-  name = "${local.resource_prefix}-bigquery-omni-role"
+  name = local.bigquery_omni_role_name
+
+  # Set maximum session duration to 12 hours for BigQuery Omni
+  max_session_duration = 43200  # 12 hours in seconds
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -13,10 +16,7 @@ resource "aws_iam_role" "bigquery_omni_role" {
         }
         Condition = {
           StringEquals = {
-            "accounts.google.com:aud" = "bigquery-omni"
-          }
-          StringLike = {
-            "accounts.google.com:sub" = "serviceAccount:*@${var.gcp_project_id}.iam.gserviceaccount.com"
+            "accounts.google.com:sub" = google_bigquery_connection.aws_omni.aws[0].access_role[0].identity
           }
         }
       }
@@ -24,7 +24,7 @@ resource "aws_iam_role" "bigquery_omni_role" {
   })
 
   tags = merge(local.common_tags, {
-    Name = "${local.resource_prefix}-bigquery-omni-role"
+    Name = local.bigquery_omni_role_name
   })
 }
 
@@ -87,13 +87,13 @@ resource "aws_iam_role_policy_attachment" "bigquery_omni_policy_attachment" {
 # BigQuery Omni Connection
 resource "google_bigquery_connection" "aws_omni" {
   connection_id = "${local.resource_prefix}-aws-omni"
-  location      = var.gcp_region
+  location      = "aws-${var.aws_region}"  # AWS region with aws- prefix
   friendly_name = "AWS Omni Connection"
   description   = "BigQuery Omni connection to AWS"
 
   aws {
     access_role {
-      iam_role_id = aws_iam_role.bigquery_omni_role.arn
+      iam_role_id = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.bigquery_omni_role_name}"
     }
   }
 }
@@ -103,26 +103,10 @@ resource "google_bigquery_dataset" "external_dataset" {
   dataset_id    = "${replace(local.resource_prefix, "-", "_")}_external_dataset"
   friendly_name = "External Dataset from AWS Glue"
   description   = "External dataset using BigQuery Omni connection to AWS Glue"
-  location      = var.gcp_region
+  location      = "aws-${var.aws_region}"  # Must match the BigQuery Omni connection region
 
-  access {
-    role          = "OWNER"
-    user_by_email = data.google_client_config.current.access_token
+  external_dataset_reference {
+    external_source = "aws-glue://${aws_glue_catalog_database.main.arn}"
+    connection      = google_bigquery_connection.aws_omni.name
   }
-}
-
-# BigQuery External Table
-resource "google_bigquery_table" "external_table" {
-  dataset_id = google_bigquery_dataset.external_dataset.dataset_id
-  table_id   = "sample_iceberg_table"
-
-  external_data_configuration {
-    autodetect    = true
-    source_format = "PARQUET"
-    source_uris   = ["s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/sample_table/data/*"]
-
-    connection_id = google_bigquery_connection.aws_omni.name
-  }
-
-  depends_on = [google_bigquery_connection.aws_omni]
 }

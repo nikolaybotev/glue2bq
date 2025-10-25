@@ -21,8 +21,15 @@ provider "aws" {
 provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region
+  # Set quota project for Access Context Manager API
+  billing_project = var.gcp_project_id
+  # Set user project override for APIs that require it
+  user_project_override = true
 }
 
 # Data sources
 data "aws_caller_identity" "current" {}
 data "google_client_config" "current" {}
+data "google_project" "current" {
+  project_id = var.gcp_project_id
+}

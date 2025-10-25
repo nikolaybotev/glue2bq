@@ -42,4 +42,7 @@ locals {
   }
   
   resource_prefix = "${var.project_name}-${var.environment}"
+  
+  # Extract AWS IAM role name to break circular dependency
+  bigquery_omni_role_name = "${local.resource_prefix}-bigquery-omni-role"
 }

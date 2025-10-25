@@ -65,6 +65,14 @@ resource "aws_iam_role_policy_attachment" "storage_transfer_policy_attachment" {
   policy_arn = aws_iam_policy.storage_transfer_policy.arn
 }
 
+# Grant Storage Transfer service account access to GCS bucket
+resource "google_storage_bucket_iam_member" "storage_transfer_gcs_access" {
+  bucket = google_storage_bucket.data_bucket.name
+  role   = "roles/storage.admin"
+  # project-289720198442@storage-transfer-service.iam.gserviceaccount.com
+  member = "serviceAccount:project-${data.google_project.current.number}@storage-transfer-service.iam.gserviceaccount.com"
+}
+
 # Storage Transfer Job
 resource "google_storage_transfer_job" "s3_to_gcs" {
   description = "Transfer data from S3 to GCS"
@@ -102,7 +110,7 @@ resource "google_storage_transfer_job" "s3_to_gcs" {
     }
   }
 
-  depends_on = [aws_iam_access_key.storage_transfer]
+  depends_on = [aws_iam_access_key.storage_transfer, google_storage_bucket_iam_member.storage_transfer_gcs_access]
 }
 
 # IAM Access Key for Storage Transfer (Note: This is a simplified approach)
