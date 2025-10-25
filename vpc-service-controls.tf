@@ -24,6 +24,26 @@ resource "google_access_context_manager_service_perimeter" "main" {
       "iam.googleapis.com",
       "serviceusage.googleapis.com"
     ]
+
+    ingress_policies {
+      title = "Mary VPN"
+
+      ingress_from {
+        identity_type = "ANY_IDENTITY"
+        
+        sources {
+          access_level = "accessPolicies/${google_access_context_manager_access_policy.main.name}/accessLevels/Mary_VPN"
+        }
+      }
+
+      ingress_to {
+        resources = ["*"]
+        
+        operations {
+          service_name = "*"
+        }
+      }
+    }
   }
 
   depends_on = [google_access_context_manager_access_policy.main]
