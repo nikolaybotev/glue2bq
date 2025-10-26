@@ -46,9 +46,7 @@ resource "aws_iam_policy" "bigquery_omni_policy" {
         Resource = [
           "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:catalog",
           aws_glue_catalog_database.main.arn,
-          aws_glue_catalog_database.main_2.arn,
           "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${aws_glue_catalog_database.main.name}/*",
-          "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${aws_glue_catalog_database.main_2.name}/*",
         ]
       },
       {
@@ -113,19 +111,6 @@ resource "google_bigquery_dataset" "external_dataset" {
 
   external_dataset_reference {
     external_source = "aws-glue://${aws_glue_catalog_database.main.arn}"
-    connection      = google_bigquery_connection.aws_omni.name
-  }
-}
-
-# BigQuery External Dataset
-resource "google_bigquery_dataset" "external_dataset_2" {
-  dataset_id    = "${replace(local.resource_prefix, "-", "_")}_external_dataset_2"
-  friendly_name = "External Dataset from AWS Glue"
-  description   = "External dataset using BigQuery Omni connection to AWS Glue"
-  location      = "aws-${var.aws_region}" # Must match the BigQuery Omni connection region
-
-  external_dataset_reference {
-    external_source = "aws-glue://${aws_glue_catalog_database.main_2.arn}"
     connection      = google_bigquery_connection.aws_omni.name
   }
 }

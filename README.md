@@ -1,14 +1,18 @@
 # Glue2BQ Terraform Project
 
-This Terraform project creates a multi-cloud data pipeline infrastructure connecting AWS and GCP, featuring:
+This Terraform project creates a multi-cloud data pipeline infrastructure connecting AWS and GCP, featuring Iceberg table support and BigQuery Omni integration.
+
+## Features
 
 - AWS S3 bucket with CMEK encryption
 - AWS Glue Catalog with CMEK encryption
 - Glue database with Iceberg table support
+- AWS Glue Crawler for Iceberg tables
 - GCP GCS bucket with CMEK encryption
 - Storage Transfer Job from S3 to GCS
-- BigQuery Omni Connection to AWS
-- VPC Service Controls Service Perimeter
+- BigQuery Omni Connection to AWS with external dataset
+- VPC Service Controls Service Perimeter with ingress/egress policies
+- Default BigQuery dataset for local queries
 
 ## Prerequisites
 
@@ -62,16 +66,20 @@ terraform apply
 
 ### 5. Create Iceberg Table with Sample Data
 
-After the infrastructure is created, run the script to populate the S3 bucket with sample Iceberg data:
+After the infrastructure is created, use the Python script in the `data/` directory to create an Iceberg table:
 
 ```bash
-./create_iceberg_table.sh
+cd data
+python3 -m pip install -r requirements.txt
+python3 create_glue_iceberg.py
 ```
 
 Or with custom parameters:
 ```bash
-./create_iceberg_table.sh your-bucket-name us-east-1
+python3 create_glue_iceberg.py glue2bq-dev-data-bucket us-east-1 sample_iceberg_table
 ```
+
+See `data/SUCCESS_SUMMARY.md` for more details on the recommended approach.
 
 ## Architecture Overview
 
@@ -80,16 +88,22 @@ Or with custom parameters:
 │       AWS       │    │   Storage       │    │       GCP       │
 │                 │    │   Transfer      │    │                 │
 │ ┌─────────────┐ │    │                 │    │ ┌─────────────┐ │
-│ │ S3 Bucket   │◄┼────┼─► Transfer Job  ─┼───►│ │ GCS Bucket  │ │
-│ │ (CMEK)      │ │    │                 │    │ │ (CMEK)      │ │
+│ │ S3 Bucket   │◄┼────┼─► Transfer Job  ┼───►│ │ GCS Bucket  │ │
+│ │ (CMEK)      │ │    │   (IAM User)    │    │ │ (CMEK)      │ │
 │ └─────────────┘ │    └─────────────────┘    │ └─────────────┘ │
-│                 │                            │                 │
-│ ┌─────────────┐ │                            │ ┌─────────────┐ │
-│ │ Glue DB     │ │                            │ │ BigQuery    │ │
-│ │ (CMEK)      │◄┼────────────────────────────┼─► Omni       │ │
-│ └─────────────┘ │                            │ │ Connection  │ │
-└─────────────────┘                            │ └─────────────┘ │
-                                               └─────────────────┘
+│                 │                           │                 │
+│ ┌─────────────┐ │                           │ ┌─────────────┐ │
+│ │ Glue DB     │ │                           │ │ BigQuery    │ │
+│ │             │ │                           │ │ Omni        │ │
+│ │ + Crawler   │◄┼───────────────────────────┼─► + External  │ │
+│ └─────────────┘ │                           │ │ Dataset     │ │
+│ ┌─────────────┐ │                           │ └─────────────┘ │
+│ │ Glue Catalog│ │                           │                 │
+│ │ (CMEK)      │ │                           │ ┌─────────────┐ │
+│ └─────────────┘ │                           │ │VPC Service  │ │
+└─────────────────┘                           │ │ Perimeter   │ │
+                                              │ └─────────────┘ │
+                                              └─────────────────┘
 ```
 
 ## Key Components
@@ -97,22 +111,30 @@ Or with custom parameters:
 ### AWS Resources
 - **S3 Bucket**: Encrypted with CMEK, contains Iceberg table data
 - **Glue Catalog**: Encrypted with CMEK, manages metadata
-- **Glue Database**: Points to Iceberg tables in S3
-- **IAM Roles**: For Storage Transfer and BigQuery Omni access
+- **Glue Database**: Single database (`glue2bq_dev_database`) for Iceberg tables
+- **Glue Crawler**: Automated Iceberg table discovery
+- **IAM Roles**: For Storage Transfer (web identity federation) and BigQuery Omni access
+- **IAM User**: For Storage Transfer service with access key
 
 ### GCP Resources
 - **GCS Bucket**: Encrypted with CMEK, destination for data transfer
-- **Storage Transfer Job**: Transfers data from S3 to GCS
-- **BigQuery Omni Connection**: Connects to AWS Glue Catalog
-- **BigQuery External Dataset**: Queries data from AWS via Omni
-- **VPC Service Perimeter**: Provides security boundaries
+- **Storage Transfer Job**: Transfers data from S3 to GCS using IAM user credentials
+- **BigQuery Omni Connection**: Connects to AWS Glue Catalog with web identity federation
+- **BigQuery External Dataset**: External dataset querying data from AWS via Omni
+- **BigQuery Default Dataset**: Single-region dataset for local queries
+- **VPC Service Perimeter**: Provides security boundaries with ingress (VPN) and egress (BigQuery Omni) policies
+- **Access Context Manager**: Manages VPN access levels
 
 ## Security Features
 
-- **CMEK Encryption**: All data encrypted with customer-managed keys
-- **IAM Roles**: Least-privilege access with web identity federation
-- **VPC Service Controls**: Network-level security perimeter
-- **Bucket Policies**: Restrictive access controls
+- **CMEK Encryption**: All data encrypted with customer-managed keys (S3, Glue Catalog, GCS)
+- **IAM Roles**: Least-privilege access with web identity federation for BigQuery Omni
+- **IAM User**: For Storage Transfer with access key-based authentication
+- **VPC Service Controls**: Network-level security perimeter with:
+  - Ingress policy: VPN access (configurable via `vpn_ip_subnetworks`)
+  - Egress policy: BigQuery Omni access to S3 bucket
+- **Bucket Policies**: Restrictive access controls (public access blocked)
+- **Bucket Versioning**: Enabled on both S3 and GCS buckets
 
 ## Troubleshooting
 
@@ -138,6 +160,18 @@ terraform validate
 # View current state
 terraform show
 
+# Check Glue databases
+aws glue get-databases
+
+# Check Glue tables
+aws glue get-tables --database-name glue2bq-dev_database
+
+# List S3 bucket contents
+aws s3 ls s3://glue2bq-dev-data-bucket/ --recursive
+
+# Query BigQuery external dataset
+bq query --use_legacy_sql=false 'SELECT COUNT(*) FROM `project-id.glue2bq_dev_external_dataset.sample_iceberg_table`'
+
 # Destroy infrastructure (when done)
 terraform destroy
 ```
@@ -146,26 +180,71 @@ terraform destroy
 
 After successful deployment, Terraform will output:
 - S3 bucket name and ARN
+- S3 CMEK ARN
 - Glue database name and ARN
+- Glue Catalog CMEK ARN
+- Storage Transfer role ARN
+- BigQuery Omni role ARN
 - GCS bucket name
+- GCS CMEK name
 - BigQuery Omni connection name
+- BigQuery external dataset ID
 - VPC Service Perimeter name
-- Various KMS key ARNs
 
 ## Next Steps
 
-1. Configure access levels and ingress/egress rules in the VPC Service Perimeter via GCP Console
-2. Test the Storage Transfer Job
-3. Query the external dataset in BigQuery
-4. Monitor security and access logs
+1. **Create Iceberg Tables**: Use the scripts in `data/` directory to populate with sample data
+2. **Run Glue Crawler**: Execute the crawler to discover Iceberg tables
+3. **Test BigQuery Omni**: Query the external datasets in BigQuery
+4. **Test Storage Transfer**: Manually trigger or wait for scheduled transfer
+5. **Configure VPN Access**: Update `vpn_ip_subnetworks` variable with your VPN ranges
+6. **Monitor Security**: Check VPC Service Controls violations and logs
+
+## Directory Structure
+
+```
+.
+├── main.tf                          # Provider configuration
+├── variables.tf                     # Input variables
+├── outputs.tf                       # Output values
+├── aws-resources.tf                 # S3, KMS keys
+├── aws-glue.tf                      # Glue databases
+├── aws-glue-crawler.tf              # Glue crawler and IAM roles
+├── storage-transfer.tf              # Storage Transfer job and IAM
+├── bigquery-omni.tf                 # BigQuery Omni connection and datasets
+├── gcp-resources.tf                 # GCS bucket, KMS
+├── vpc-service-controls.tf          # VPC Service Perimeter and access policies
+├── terraform.tfvars.example         # Example variables file
+└── data/                            # Helper scripts for Iceberg tables
+    ├── create_glue_iceberg.py      # Create Iceberg table (recommended)
+    ├── create_iceberg_spark.py      # Alternative: using Spark
+    ├── create_iceberg_simple.py     # Alternative: using PyIceberg
+    ├── test_bigquery_omni.py        # Test BigQuery Omni access
+    ├── requirements.txt             # Python dependencies
+    ├── ICEBERG_GUIDE.md             # Comprehensive guide for Iceberg tables
+    └── SUCCESS_SUMMARY.md           # Summary of successful approach
+```
 
 ## Cost Considerations
 
 - S3 storage and requests
 - Glue Catalog metadata operations
-- GCS storage and operations
+- GCS storage and operations (with lifecycle rules to Nearline after 7 days)
 - BigQuery Omni query costs
 - Storage Transfer job costs
 - VPC Service Controls costs
+- KMS key usage and operations
 
 Monitor usage in both AWS and GCP consoles to track costs.
+
+## Additional Resources
+
+- **Creating Iceberg Tables**: See `data/ICEBERG_GUIDE.md` for detailed instructions
+- **Successful Approach**: See `data/SUCCESS_SUMMARY.md` for the recommended method
+- **Testing**: Use `data/test_bigquery_omni.py` to verify BigQuery Omni connectivity
+
+## Known Limitations
+
+- Storage Transfer uses IAM user/access key instead of web identity federation
+- VPC Service Perimeter ingress/egress policies are defined in Terraform (not using Violations Analyzer)
+- VPN subnetworks must be provided via `vpn_ip_subnetworks` variable
