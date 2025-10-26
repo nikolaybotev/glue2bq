@@ -38,13 +38,18 @@ resource "aws_iam_policy" "storage_transfer_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
           "s3:ListBucket",
-          "s3:GetBucketLocation"
         ]
         Resource = [
-          aws_s3_bucket.data_bucket.arn,
+          aws_s3_bucket.data_bucket.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+        ]
+        Resource = [
           "${aws_s3_bucket.data_bucket.arn}/*"
         ]
       },
@@ -88,25 +93,6 @@ resource "google_storage_transfer_job" "s3_to_gcs" {
     }
     gcs_data_sink {
       bucket_name = google_storage_bucket.data_bucket.name
-    }
-  }
-
-  schedule {
-    schedule_start_date {
-      year  = 2024
-      month = 1
-      day   = 1
-    }
-    schedule_end_date {
-      year  = 2025
-      month = 12
-      day   = 31
-    }
-    start_time_of_day {
-      hours   = 0
-      minutes = 0
-      seconds = 0
-      nanos   = 0
     }
   }
 
