@@ -2,7 +2,7 @@
 resource "google_project_service" "accesscontextmanager" {
   project = var.gcp_project_id
   service = "accesscontextmanager.googleapis.com"
-  
+
   disable_dependent_services = false
 }
 
@@ -14,7 +14,7 @@ resource "google_access_context_manager_service_perimeter" "main" {
 
   status {
     resources = ["projects/${data.google_project.current.number}"]
-    
+
     restricted_services = [
       "storage.googleapis.com",
       "storagetransfer.googleapis.com",
@@ -28,7 +28,7 @@ resource "google_access_context_manager_service_perimeter" "main" {
 
       ingress_from {
         identity_type = "ANY_IDENTITY"
-        
+
         sources {
           access_level = google_access_context_manager_access_level.mary_vpn.name
         }
@@ -36,9 +36,34 @@ resource "google_access_context_manager_service_perimeter" "main" {
 
       ingress_to {
         resources = ["*"]
-        
+
         operations {
           service_name = "*"
+        }
+      }
+    }
+
+    egress_policies {
+      title = "BigQuery Omni"
+
+      egress_from {
+        identity_type      = "ANY_IDENTITY"
+        source_restriction = "SOURCE_RESTRICTION_ENABLED"
+
+        sources {
+          resource = "projects/${data.google_project.current.number}"
+        }
+      }
+
+      egress_to {
+        external_resources = ["s3://${aws_s3_bucket.data_bucket.bucket}"]
+
+        operations {
+          service_name = "bigquery.googleapis.com"
+
+          method_selectors {
+            permission = "externalResource.read"
+          }
         }
       }
     }
