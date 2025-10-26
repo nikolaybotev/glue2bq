@@ -2,7 +2,7 @@
 resource "aws_glue_crawler" "iceberg_crawler" {
   name          = "test"  # Your actual crawler name
   role          = aws_iam_role.glue_crawler_role.arn
-  database_name = aws_glue_catalog_database.main.name
+  database_name = aws_glue_catalog_database.main_2.name
 
   s3_target {
     path = "s3://${aws_s3_bucket.data_bucket.bucket}/iceberg/"

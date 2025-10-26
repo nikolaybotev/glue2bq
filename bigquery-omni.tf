@@ -46,7 +46,9 @@ resource "aws_iam_policy" "bigquery_omni_policy" {
         Resource = [
           "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:catalog",
           aws_glue_catalog_database.main.arn,
-          "${aws_glue_catalog_database.main.arn}/*"
+          aws_glue_catalog_database.main_2.arn,
+          "${aws_glue_catalog_database.main.arn}/*",
+          "${aws_glue_catalog_database.main_2.arn}/*",
         ]
       },
       {
