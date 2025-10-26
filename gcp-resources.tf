@@ -61,3 +61,11 @@ resource "google_storage_bucket" "data_bucket" {
 
   depends_on = [google_kms_crypto_key_iam_binding.gcs_cmek_binding]
 }
+
+# BigQuery Single-Region Dataset
+resource "google_bigquery_dataset" "default" {
+  dataset_id  = "default"
+  friendly_name = "Default Dataset"
+  description   = "Dummy BigQuery single-region dataset"
+  location      = var.gcp_region
+}
