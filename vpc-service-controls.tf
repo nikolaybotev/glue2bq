@@ -19,9 +19,7 @@ resource "google_access_context_manager_service_perimeter" "main" {
       "storage.googleapis.com",
       "storagetransfer.googleapis.com",
       "bigquery.googleapis.com",
-      "bigqueryconnection.googleapis.com",
       "cloudkms.googleapis.com",
-      "iam.googleapis.com",
       "serviceusage.googleapis.com"
     ]
 
