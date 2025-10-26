@@ -112,6 +112,15 @@ resource "aws_kms_key" "glue_catalog_cmek" {
         }
         Action   = "kms:*"
         Resource = "*"
+      },
+      {
+        Sid    = "Allow BigQuery Omni to Decrypt the Glue Catalog CMEK"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${local.bigquery_omni_role_name}/bigqueryomni"
+        }
+        Action   = "kms:Decrypt"
+        Resource = "*"
       }
     ]
   })
@@ -135,7 +144,7 @@ resource "aws_glue_data_catalog_encryption_settings" "main" {
     }
     encryption_at_rest {
       catalog_encryption_mode = "SSE-KMS"
-      sse_aws_kms_key_id     = aws_kms_key.glue_catalog_cmek.arn
+      sse_aws_kms_key_id      = aws_kms_key.glue_catalog_cmek.arn
     }
   }
 }
