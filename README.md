@@ -88,19 +88,19 @@ See `data/SUCCESS_SUMMARY.md` for more details on the recommended approach.
 │       AWS       │    │   Storage       │    │       GCP       │
 │                 │    │   Transfer      │    │                 │
 │ ┌─────────────┐ │    │                 │    │ ┌─────────────┐ │
-│ │ S3 Bucket   │◄┼────┼─► Transfer Job  ┼───►│ │ GCS Bucket  │ │
+│ │ S3 Bucket   │◄┼────┼── Transfer Job  ┼────┼►│ GCS Bucket  │ │
 │ │ (CMEK)      │ │    │   (IAM User)    │    │ │ (CMEK)      │ │
 │ └─────────────┘ │    └─────────────────┘    │ └─────────────┘ │
 │                 │                           │                 │
 │ ┌─────────────┐ │                           │ ┌─────────────┐ │
 │ │ Glue DB     │ │                           │ │ BigQuery    │ │
 │ │             │ │                           │ │ Omni        │ │
-│ │ + Crawler   │◄┼───────────────────────────┼─► + External  │ │
-│ └─────────────┘ │                           │ │ Dataset     │ │
+│ │ + Crawler   │◄┼───────────────────────────┼►| + External  │ │
+│ └─────────────┘ │                           │ │   Dataset   │ │
 │ ┌─────────────┐ │                           │ └─────────────┘ │
 │ │ Glue Catalog│ │                           │                 │
 │ │ (CMEK)      │ │                           │ ┌─────────────┐ │
-│ └─────────────┘ │                           │ │VPC Service  │ │
+│ └─────────────┘ │                           │ │ VPC Service │ │
 └─────────────────┘                           │ │ Perimeter   │ │
                                               │ └─────────────┘ │
                                               └─────────────────┘
